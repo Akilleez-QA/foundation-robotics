@@ -32,7 +32,7 @@ python -B tools/build_manifest.py
 
 ## Measured
 
-34 tests pass with `python -B -m unittest discover -s tests -t .` on Python 3.14.8 (normal and `-O`), at the initial commit. CI: local only.
+34 tests pass with `python -B -m unittest discover -s tests -t .` on Python 3.14.8 in a fresh clone (normal and `-O`). CI: local only.
 
 ## Documentation
 

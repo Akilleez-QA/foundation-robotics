@@ -18,7 +18,7 @@ def main():
         sys.stdout.buffer.write(canonical_inventory() + b"\n")
         return
     files = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-             for p in sorted(ROOT.rglob("*")) if p.is_file() and "__pycache__" not in p.parts
+             for p in sorted(ROOT.rglob("*")) if p.is_file() and "__pycache__" not in p.parts and ".git" not in p.parts
              and p.suffix != ".pyc" and p.name != "SOURCE-MANIFEST.json"}
     raw = (json.dumps({"schema": "foundation-robotics-source-manifest/1", "version": "0.1.0", "files": files},
                       sort_keys=True, indent=2) + "\n").encode()

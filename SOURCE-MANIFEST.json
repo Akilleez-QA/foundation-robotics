@@ -11,7 +11,7 @@
     "CONTRIBUTING.md": "9ed1fe3efc3c3f000b98754c6909fa978112d9f6540952a4e8e0fdddedd3c01e",
     "LICENSE": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
     "NOTICE.md": "612fed4775eecf3503432401df1638b8f394d5d4ef3c8aa25195d6360630a289",
-    "README.md": "5eb8574be5fc10d451b82b59a4e9b9604714d335c62b21f82a74400d7afc31db",
+    "README.md": "a59fc1da93f2706c6ffbfe28c6b42d0fd0e7b985f6a3dc5ad3b745cf81eb4bd7",
     "SECURITY.md": "7e14a8a25cb03c7055f8966e9ca2052de5f818bc3fbfe825c9a916c1e9463990",
     "SUPPORT.md": "e3ebb589274d55dc463a69c7ca0843edd2bdf2bda01efa3f88be7c03681c343c",
     "docs/README.md": "a75d462384ee13bd21c1a3fd13fa82c3e909f284d5e664a58cdffa8715ad9a93",
@@ -42,9 +42,9 @@
     "foundation_robotics_bridge/schemas.py": "4d481b8b700c2ffa50b1bf1c688d564cc0ee8744ec2919976d707d26187539a3",
     "foundation_robotics_bridge/server.py": "939429ec433e743f45708ca17e4f714ff58378c0dad767d21c8f3bba91fd2865",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "tests/test_bridge.py": "4ddcde0bc2f282efb8e49ded5d3272e3ec19efe30e4d66e965a31d7e3ba656c9",
+    "tests/test_bridge.py": "c3f8e2c3cc2808c812575e1045c7edfd70bf3684707d776a1f5ba494283970f6",
     "tests/test_tools.py": "eace05bdb204f28f8fe8510db6338d70b7e522bc4f8a0385413a36a4ce42eb56",
-    "tools/build_manifest.py": "f155db8e637cd2e83d0bd2f83d76f40179029ee720a29aa82bd3653316266c6a"
+    "tools/build_manifest.py": "7c8db477e79c5a364a100e683b88ee5462f0f5f97d6067b1f9d1c3808221b1ff"
   },
   "schema": "foundation-robotics-source-manifest/1",
   "version": "0.1.0"
