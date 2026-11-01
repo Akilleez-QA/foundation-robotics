@@ -46,7 +46,14 @@ python -B tools/build_manifest.py
 
 ## Measured
 
-34 tests pass with `python -B -m unittest discover -s tests -t .` on Python 3.14.8 in a fresh clone (normal and `-O`). CI: local only.
+At commit `ebd6d4d14e050a5ebda2e4961b9fd1464d1e5653`, on Python 3.14.8:
+
+| Command | Result |
+|---|---|
+| `python -B -m unittest discover -s tests -t .` | 34 tests passed |
+| `python -B -O -m unittest discover -s tests -t .` | 34 tests passed |
+
+CI runs both modes on Python 3.12 and verifies the source manifest.
 
 ## Documentation
 
@@ -66,7 +73,11 @@ See [docs/README.md](docs/README.md): requirements, architecture, interface cont
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security
+
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
