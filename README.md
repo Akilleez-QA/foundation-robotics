@@ -53,7 +53,7 @@ At commit `ebd6d4d14e050a5ebda2e4961b9fd1464d1e5653`, on Python 3.14.8:
 | `python -B -m unittest discover -s tests -t .` | 34 tests passed |
 | `python -B -O -m unittest discover -s tests -t .` | 34 tests passed |
 
-CI: local only.
+CI runs both modes on Python 3.12 and verifies the source manifest.
 
 ## Documentation
 
