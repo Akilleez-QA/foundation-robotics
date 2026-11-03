@@ -51,13 +51,15 @@ passed, or treat passing tests as domain acceptance.
 ## Source and release boundaries
 
 [SOURCE-MANIFEST.json](SOURCE-MANIFEST.json) records SHA-256 hashes of shipped
-files. Regenerate it with [the manifest tool](tools/build_manifest.py) after edits,
+source files outside the root `.github/` tree. Regenerate it with
+[the manifest tool](tools/build_manifest.py) after edits to covered files,
 including documentation and this file; do not hand-edit hashes. The tool scans
-the working tree, excluding `.git`, bytecode, and the manifest itself, so keep
+the working tree, excluding the root `.github/` tree, `.git`, `__pycache__`,
+`.pyc` files, and the manifest itself, so keep
 temporary artifacts and local environments outside the repository.
 
 The manifest tool prints the file count, manifest SHA-256, and canonical tool
-inventory SHA-256. Shipped-file changes alter the manifest pin; consumers repin
+inventory SHA-256. Covered-file changes alter the manifest pin; consumers repin
 in the same change that updates their vendored copy. Follow
 [configuration management](docs/configuration/configuration-management.md).
 Releases and tags require owner approval.
