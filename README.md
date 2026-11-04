@@ -69,7 +69,7 @@ See [docs/README.md](docs/README.md): requirements, architecture, interface cont
 | `tests/` | Unit and bridge tests |
 | `tools/` | Manifest and data tools |
 | `docs/` | Requirements, architecture, ICD, verification, configuration, guides |
-| `SOURCE-MANIFEST.json` | SHA-256 of every shipped file |
+| `SOURCE-MANIFEST.json` | SHA-256 of every shipped source file outside `.github/` |
 
 ## Contributing
 
