@@ -13,7 +13,7 @@
     "SUPPORT.md": "21a3311c1d9c74d1e02ea2cf42aac835d491be98876593f41e0ea4cdb77c9bf5",
     "docs/README.md": "a89fb1054eb7a46a91aff95c0dd3371b2bf06ca2bbb5f99bc0834539f4c920f9",
     "docs/architecture/architecture.md": "437b0f35f27750ae7e737bbcf2fe01df7b6888047cfd46c09ade36d752a0367d",
-    "docs/assurance/assurance-record.md": "b345445e0fa6fad44e69a232dc5fed6130ed41ef739b1e929f110850967a2d75",
+    "docs/assurance/assurance-record.md": "35ed0cd9258302e63a8263ff66db1a6edf78c06f0d45d4c18a4b6e3f0f3afef1",
     "docs/configuration/configuration-management.md": "a8137069e4ec079730fa631f3bb7c2d1f91c382f3dbc39f6d7e569ee202f314c",
     "docs/data/calibration-cases.md": "0e2d6cf15cf97ebfdab40680ef2a67b2521b089911299cb4fd414c71e3e4fac2",
     "docs/data/data-dictionary.md": "9cc5790645f2125f49ee89163a9c6d8002da75860d541afda0bf0d064811dfd7",
@@ -58,7 +58,7 @@
     "tools/build_manifest.py": "a28e3962725cb2f05ae18214180160edcec3299b7ab3e4f7bf3673cf0f599765",
     "tools/check_trace.py": "0f081ffe04af56cdb998a77e3b602724901500037d0daf70878e3003a6dddfb6",
     "tools/gen_docs.py": "2a3972d3d8fe8879a437324be6628dcdaab694d053b2d7e51068a418920d3490",
-    "tools/gen_reports.py": "f49c12463ca76ca965d49e67167d4b4d1b7db4469ff1d2c2051670841b461a7a"
+    "tools/gen_reports.py": "0da7e1fb008b04c1283d565cef183e2eefa9c7a066c3d7c2519ff59b8d2b79a9"
   },
   "schema": "foundation-robotics-source-manifest/1",
   "version": "0.1.0"

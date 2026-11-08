@@ -35,7 +35,7 @@ def run_suite(optimized):
         results[f"tests/{module}.py::{cls}.{name}"] = outcome
     tail = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else ""
     digest = hashlib.sha256(proc.stderr.encode()).hexdigest()
-    return " ".join(command[1:]).replace(sys.executable, "python"), proc.returncode, results, tail, digest
+    return " ".join(["python", *command[1:]]), proc.returncode, results, tail, digest
 
 
 def gh(*args):
@@ -105,8 +105,9 @@ def main():
     dirty = git("status", "--porcelain", "--untracked-files=no")
     date = datetime.date.today().isoformat()
     try:
+        import importlib.metadata
         import jsonschema
-        schema_validation = f"active (jsonschema {jsonschema.__version__})"
+        schema_validation = f"active (jsonschema {importlib.metadata.version(jsonschema.__name__)})"
     except ImportError:
         schema_validation = "inactive (jsonschema not installed; output-schema validation in tests/test_tools.py skipped)"
     suites = [run_suite(False), run_suite(True)]
@@ -117,7 +118,7 @@ def main():
     closed_issues = gh("issue", "list", "--state", "closed", "--json", "number")
     merged = gh("pr", "list", "--state", "merged", "--limit", "200", "--json", "number,reviews")
     tags = git("tag", "--list")
-    env = f"{platform.system()} {platform.release()}, {platform.machine()}, Python {platform.python_version()}"
+    env = f"{platform.system()} {platform.machine()}, Python {platform.python_version()}"
 
     str_lines = header(f"FROBO-STR-{args.label.upper()}", "software test report", args.label, date, commit)
     failed = [s for s in suites if s[1] != 0]

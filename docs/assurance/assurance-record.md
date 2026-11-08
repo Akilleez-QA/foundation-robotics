@@ -61,7 +61,7 @@ No pyflakes-class (F) findings. The E731/E741/E402 items are style, not defects.
 
 ### Peer review summary
 
-`gh pr list --state all`: 10 pull requests, all merged (#1 to #10), 2 of them from Dependabot. None has a recorded GitHub review; review happened by the maintainer before merge. No issues have been filed.
+`gh pr list --state all`: 10 pull requests, all merged (#1 to #10), 2 of them from Dependabot. One (#7) has a recorded GitHub review, an automated review comment; the others were reviewed only by the maintainer before merge, with no review record. No issues have been filed.
 
 ### Findings
 
