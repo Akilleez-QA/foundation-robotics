@@ -22,9 +22,13 @@ Physics checks for motion: scale timing, gait, balance, kinematics, mechanisms, 
 
 ## Status
 
-Version 0.1.0. 6 read-only tool(s) behind a stdio JSON-RPC bridge, standard library only. Every result carries Evidence and an input hash. A verdict is an observation, not an acceptance decision.
+Version 0.1.0, no release tag yet. Six read-only tools behind a stdio JSON-RPC bridge, standard library only. Every result carries Evidence and an input hash. A verdict is an observation, not an acceptance decision.
+
+Classification: self-assessed Class E analog (research and general-purpose software), not safety-critical. Class E holds only because no real engineering decision depends on this software. This is not a NASA compliance determination. See the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed).
 
 ## Quickstart
+
+Requires Python 3.11 or newer. Nothing is installed.
 
 ```
 git clone https://github.com/Akilleez-QA/foundation-robotics
@@ -32,6 +36,8 @@ cd foundation-robotics
 python -B -m unittest discover -s tests -t .
 python -B tools/build_manifest.py
 ```
+
+The tests print `OK`. The manifest tool prints the file count, the manifest SHA-256 and the tool inventory SHA-256 that a host pins. To send your first request to the bridge, follow the [tutorial](docs/guides/tutorials/first-check.md).
 
 ## What is inside
 
@@ -46,19 +52,17 @@ python -B tools/build_manifest.py
 
 ## Measured
 
-At commit `ebd6d4d14e050a5ebda2e4961b9fd1464d1e5653`, on Python 3.14.8:
+Test results for the documented baseline, with commit, environment and per-test outcomes, are in the latest generated [test report](docs/verification/reports/README.md). CI runs the suite in normal and `-O` modes on Python 3.12, verifies the source manifest and runs gitleaks.
 
-| Command | Result |
-|---|---|
-| `python -B -m unittest discover -s tests -t .` | 34 tests passed |
-| `python -B -O -m unittest discover -s tests -t .` | 34 tests passed |
+## Limitations
 
-CI runs both modes on Python 3.12 and verifies the source manifest.
+- Outputs judge numbers the caller supplies. They are not engineering approvals, safety determinations or clinical assessments, and the software commands no hardware.
+- Most thresholds are still marked `CHECK`: tried on a few known-good and known-bad cases, not approved by a qualified person.
+- Do not use the results as the sole basis for any decision about a real robot, machine or person. Read [Limitations and safety-relevant use](docs/guides/explanation/limitations.md) first.
 
 ## Documentation
 
-See [docs/README.md](docs/README.md): requirements, architecture, interface control, verification matrix, configuration management.
-
+See [docs/README.md](docs/README.md): tutorial, how-to guides, tool reference, explanation, and the control documents (management plan, requirements, design, interface, data dictionary, test plan, verification matrix, configuration management, test reports, version descriptions, assurance record).
 
 ## Layout
 
@@ -66,14 +70,14 @@ See [docs/README.md](docs/README.md): requirements, architecture, interface cont
 |---|---|
 | `foundation_robotics/` | Domain package |
 | `foundation_robotics_bridge/` | stdio JSON-RPC bridge and schemas |
-| `tests/` | Unit and bridge tests |
-| `tools/` | Manifest and data tools |
-| `docs/` | Requirements, architecture, ICD, verification, configuration, guides |
+| `tests/` | Unit, bridge and documentation tests |
+| `tools/` | Manifest tool, trace and link check, documentation and report generators |
+| `docs/` | Control documents and guides |
 | `SOURCE-MANIFEST.json` | SHA-256 of every shipped source file outside `.github/` |
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Help: [SUPPORT.md](SUPPORT.md).
 
 ## Security
 
