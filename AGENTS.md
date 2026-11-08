@@ -29,8 +29,12 @@ Read [the architecture](docs/architecture/architecture.md) and
 bounded input validation, schema-defined numeric representations, and execution
 without network access or caller-controlled paths. The bridge starts with
 `python -B -m foundation_robotics_bridge`; it is JSON-RPC, not MCP.
-Every new requirement needs a row in
-[the verification matrix](docs/verification/verification-matrix.md).
+Every new requirement needs an entry in
+[the requirements](docs/requirements/requirements.md) and a row in
+[the verification matrix](docs/verification/verification-matrix.md);
+`tests/test_docs.py` runs `tools/check_trace.py` and fails otherwise. After
+changing schemas or `foundation_robotics/data/`, run `python -B tools/gen_docs.py`.
+Documentation follows the family standard indexed in [docs/README.md](docs/README.md).
 
 ## Verification
 
