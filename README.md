@@ -20,13 +20,15 @@ Why "robotics"? The same physics applies to robots and to animated characters. S
 ## How it works
 
 ```mermaid
-flowchart LR
-    P["Producer<br/>animation pipeline, script<br/>or AI agent"] -- "one JSON request per line<br/>on stdin" --> B["Bridge<br/>checks size, integers<br/>and message shape"]
-    B --> T["Tool<br/>checks its arguments,<br/>computes each check"]
-    T --> D[("Bundled data<br/>default thresholds and the<br/>cases they were tried on")]
-    T --> R["Receipt<br/>checks + verdict + Evidence +<br/>request hash + boundary"]
-    R -- "one JSON line on stdout" --> P
+flowchart TD
+    P["Producer<br/>animation pipeline, script<br/>or AI agent"] --> B["Bridge<br/>checks the request"]
+    B --> T["Tool<br/>computes each check"]
+    D[("Default thresholds")] --> T
+    T --> R["Receipt<br/>checks, verdict, Evidence"]
+    R --> P
 ```
+
+The bridge checks each request's size, integers and message shape. The tool checks its arguments and compares the results with the bundled default thresholds, which record the cases they were tried on. The receipt carries the checks and verdict, Evidence, the request hash and the boundary flags.
 
 The **bridge** is the small server process your program talks to. It speaks JSON-RPC 2.0 over standard input and output, one message per line. You start it, send `initialize`, then any number of `tools/call` requests, then close stdin. All values cross the wire as integers, and each field name ends in its unit: `leg_length_mm`, `cycle_ms`, `froude_permille` (per-mille: 1000 means 1.0). Integers avoid floating-point rounding differences on the wire, and receipts hold no clock time or random values, so the same request always gives the same answer.
 
