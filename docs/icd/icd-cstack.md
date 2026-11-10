@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-ICD-CSTACK |
-| Version | 2.0 |
+| Version | 2.1 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -48,15 +48,15 @@ Assessments: `scale_timing` returns `timing_estimated`; the five judged tools re
 | Condition | Response | Caller action | Test |
 |---|---|---|---|
 | Duplicate keys, a float, `NaN`/`Infinity`, invalid UTF-8 or JSON | `-32700`, `id: null` | Fix the encoder | `tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed` (duplicate, float, NaN) |
-| Frame over 65536 bytes, nesting over 32, over 16384 nodes, string over 1024 chars, integer over 15 digits | `-32002`, `id: null` | Split or shrink the request | depth only, same test; others GAP-ROB-01 to 04 |
-| Line over 65537 bytes or without newline | `-32002`, then exit 2 | Restart the bridge | none (GAP-ROB-05) |
-| Not an object, extra envelope field, wrong `jsonrpc`, empty method, `null` or over-long id | `-32600`, `id: null` | Fix the envelope | none (GAP-ROB-10) |
-| Unknown method | `-32601` | — | none (GAP-ROB-10) |
-| Wrong params fields, unknown tool, non-object `arguments` | `-32602` | — | unknown tool: `test_wire_profile_fails_closed` |
-| `tools/*` before `initialize`, or a second `initialize` | `-32000` | Initialize once | before-init: `test_wire_profile_fails_closed`; second init: none (GAP-ROB-08) |
-| Wrong `protocolVersion` | `-32001` | Use `foundation-robotics-jsonrpc/1` | none (GAP-ROB-08) |
-| Unexpected exception | `-32603`, no result | Report a problem | none (GAP-ROB-11) |
-| Response over 1048576 bytes | `-32002` "Result withheld" | Send fewer frames | none (GAP-ROB-06) |
+| Frame over 65536 bytes, nesting over 32, over 16384 nodes, string over 1024 chars, integer over 15 digits | `-32002`, `id: null` | Split or shrink the request | depth: same test; the others: `tests/test_bridge.py::BridgeGapTests.test_gap_rob_01_input_frames_over_65536_bytes_are_rejected_with_32002`, `test_gap_rob_02_more_than_16384_json_nodes_are_rejected_with_32002`, `test_gap_rob_03_strings_over_1024_characters_are_rejected_with_32002`, `test_gap_rob_04_integers_over_15_digits_are_rejected_with_32002` |
+| Line over 65537 bytes or without newline | `-32002`, then exit 2 | Restart the bridge | `tests/test_bridge.py::BridgeTests.test_gap_rob_05_an_oversized_or_unterminated_line_gets_one_reply_then_exit_status_2` |
+| Not an object, extra envelope field, wrong `jsonrpc`, empty method, `null` or over-long id | `-32600`, `id: null` | Fix the envelope | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_10_envelope_method_and_argument_errors` |
+| Unknown method | `-32601` | — | `test_gap_rob_10_envelope_method_and_argument_errors` |
+| Wrong params fields, unknown tool, non-object `arguments` | `-32602` | — | unknown tool: `test_wire_profile_fails_closed`; params and `arguments`: `test_gap_rob_10_envelope_method_and_argument_errors` |
+| `tools/*` before `initialize`, or a second `initialize` | `-32000` | Initialize once | before-init: `test_wire_profile_fails_closed`; second init: `tests/test_bridge.py::BridgeGapTests.test_gap_rob_08_second_initialize_is_32000_and_wrong_protocol_is_32001` |
+| Wrong `protocolVersion` | `-32001` | Use `foundation-robotics-jsonrpc/1` | `test_gap_rob_08_second_initialize_is_32000_and_wrong_protocol_is_32001` |
+| Unexpected exception | `-32603`, no result | Report a problem | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_11_an_unexpected_tool_exception_returns_32603_with_no_result` |
+| Response over 1048576 bytes | `-32002` "Result withheld" | Send fewer frames | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_06_a_response_over_1048576_bytes_is_withheld_with_32002` |
 | Arguments refused by the tool | Success envelope, `isError: true`, assessment `tool_error`, receipt `status: error`, Evidence present | Read `receipt.error` | `tests/test_bridge.py::BridgeTests.test_bad_arguments_are_a_tool_error_that_still_carries_evidence` |
 
 The input schemas are necessary, not sufficient: some rules (for example exactly one of `leg_length_mm` and `height_mm`) are enforced only in code and surface as `tool_error`.
@@ -92,6 +92,10 @@ Current values are in the latest [version description](../releases/README.md). A
 | REQ-ROB-015 | §4 |
 | REQ-ROB-016 | §3, §4 |
 | REQ-ROB-022 | §3 |
+| REQ-ROB-025, REQ-ROB-029 | §2, §4 |
+| REQ-ROB-026 | §4, §6 |
+| REQ-ROB-027 | §3 |
+| REQ-ROB-028, REQ-ROB-030, REQ-ROB-031 | §3, §4 |
 
 ## 8. Change acceptance
 
@@ -104,3 +108,4 @@ A change to this interface needs the full suite passing in both modes, a regener
 | 1.0 | 2026-10-30 | d779a9f | Sides, transport, methods, rules | Initial commit |
 | 1.1 | 2026-11-04 | 8bc1227 | Pin rule excludes the root `.github/` tree | PR #10 |
 | 2.0 | 2026-11-08 | b4de079 | Family standard. Added `ping` (was missing from the method list). Corrected the numeric rule: floats are rejected for every message while parsing, and no decimal strings are used (the old text said "bounded decimal strings"). Error table with tests and gaps, identity table, security bounds, requirements trace | docs/nasa-standard PR |
+| 2.1 | 2026-11-10 | d664527 | Error table names the tests that closed GAP-ROB-01 to 11; requirements trace adds REQ-ROB-025 to 031. No interface change | PR from the family findings sweep |

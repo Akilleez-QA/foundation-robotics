@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-DD |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -37,10 +37,10 @@ Field-level types and ranges: [tool catalog](../guides/reference/tool-catalog.md
 | Measure | integer | milli-SI or per-mille, named by suffix | -10^12 to 10^12 | — | Any input or output quantity | `foundation_robotics/measures.py` `MEASURE_LIMIT` |
 | Coordinate | integer | mm (positions), mrad or mm (joint values) | -10^9 to 10^9 | — | Positions, joint values and limits | `measures.py` `COORD_LIMIT` |
 | Identifier | string | — | `^[A-Za-z0-9][A-Za-z0-9:_.\-]{0,63}$` | — | Foot, joint, gear and appendage ids; unique within a list | `measures.py` `ID` |
-| `gravity_mm_s2` | integer | mm/s² | 1 to 10^6 | 9806.65 (standard gravity, used as a float) | Gravity for scaling, Froude and free fall | `measures.py` `gravity` |
-| `up_axis` | string | — | `y` or `z` | `y` | Vertical axis; ground plane is the other two | `measures.py` `up_axis` |
+| `gravity_mm_s2` | integer | mm/s² | 1 to 10^6 | 9806.65 (standard gravity, used as a float) | Gravity for scaling, Froude and free fall (REQ-ROB-020, REQ-ROB-034) | `measures.py` `gravity` |
+| `up_axis` | string | — | `y` or `z` | `y` | Vertical axis; ground plane is the other two (REQ-ROB-019, REQ-ROB-033) | `measures.py` `up_axis` |
 | `fps_milli` | integer | milli-frames per second | 1 to 10^6 | — (required where used) | Frame rate; 30000 = 30 fps | each tool module |
-| `thresholds` | object | per key | up to 8 keys from the tool's own list, each a Measure | from `defaults.json` | Caller overrides of default thresholds | `measures.py` `thresholds` |
+| `thresholds` | object | per key | up to 8 keys from the tool's own list, each a Measure | from `defaults.json` | Caller overrides of default thresholds; each key labelled `caller` or `default` in `result.threshold_sources` (REQ-ROB-032) | `measures.py` `thresholds` |
 | Revolute joint value `q` | integer | mrad | Coordinate | — | Joint angle | `kinematics.py` |
 | Prismatic joint value `q` | integer | mm | Coordinate | — | Joint extension along its axis | `kinematics.py` |
 | Rounding | — | — | — | — | Floats are rounded half away from zero and clipped to 10^12; a non-finite value refuses the call | `measures.py` `rnd` |
@@ -76,17 +76,18 @@ None. The bridge reads no environment variables, options or configuration files.
 
 | Limit | Value | Enforced in | Test |
 |---|---|---|---|
-| Input frame | 65536 bytes | `server.decode_frame` | none (GAP-ROB-01) |
-| Output frame | 1048576 bytes | `server.encode_response` | none (GAP-ROB-06) |
+| Input frame | 65536 bytes | `server.decode_frame` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_01_input_frames_over_65536_bytes_are_rejected_with_32002` (GAP-ROB-01 closed) |
+| Output frame | 1048576 bytes | `server.encode_response` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_06_a_response_over_1048576_bytes_is_withheld_with_32002` (GAP-ROB-06 closed) |
 | JSON depth | 32 | `server.decode_frame` | `tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed` |
-| JSON nodes | 16384 | `server.decode_frame` | none (GAP-ROB-02) |
-| String length | 1024 characters | `server.decode_frame` | none (GAP-ROB-03) |
-| Integer digits | 15 | `server._integer` | none (GAP-ROB-04) |
-| Request id | 128 characters, string or integer | `server.Bridge.dispatch` | none (GAP-ROB-10) |
-| Evidence entries per receipt | 1 to 16 | `outputSchema` | REQ-ROB-022 tests, when `jsonschema` is present |
+| JSON nodes | 16384 | `server.decode_frame` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_02_more_than_16384_json_nodes_are_rejected_with_32002` (GAP-ROB-02 closed) |
+| String length | 1024 characters | `server.decode_frame` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_03_strings_over_1024_characters_are_rejected_with_32002` (GAP-ROB-03 closed) |
+| Integer digits | 15 | `server._integer` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_04_integers_over_15_digits_are_rejected_with_32002` (GAP-ROB-04 closed) |
+| Request id | 128 characters, string or integer | `server.Bridge.dispatch` | `tests/test_bridge.py::BridgeGapTests.test_gap_rob_10_envelope_method_and_argument_errors` (GAP-ROB-10 closed) |
+| Evidence entries per receipt | 1 to 16 | `outputSchema` | REQ-ROB-022 tests; CI installs `jsonschema` |
 
 ## Change history
 
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | b4de079 | Initial baseline | docs/nasa-standard PR |
+| 1.1 | 2026-11-10 | d664527 | Operational-limit rows name the tests that closed GAP-ROB-01 to 04, 06 and 10; `gravity_mm_s2`, `up_axis` and `thresholds` cite REQ-ROB-032 to 034; schema checks now run in CI | PR from the family findings sweep |

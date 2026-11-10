@@ -6,6 +6,7 @@ Format: Keep a Changelog 1.1, SemVer.
 
 ### Added
 
+- Tests for every formerly untested behaviour (GAP-ROB-01 to 14), a doubled-word check over citation and Evidence text, and a CI guard that fails when `jsonschema` is missing. From the family findings sweep.
 - Initial release: Foundation package, stdio bridge, tests, and NASA-style docs under `docs/`.
 - Documentation to the Cstack family standard (organized after NASA NPR 7150.2D and the NASA Software Engineering Handbook; self-assessed Class E analog, not safety-critical): software management plan, compliance matrix, data dictionary, test plan, test report, version description, assurance record, user manual map, tutorial, how-to guides, tool catalog, and a limitations and safety-relevant use page.
 - `tools/check_trace.py` (requirement, test and design trace plus dead-link check), `tools/gen_docs.py` (tool catalog, defaults and calibration pages) and `tools/gen_reports.py` (test report and version description). `tests/test_docs.py` runs the trace check and the generated-docs check.
@@ -13,6 +14,9 @@ Format: Keep a Changelog 1.1, SemVer.
 
 ### Changed
 
+- Tool output text: the `squash_check` tolerance Evidence note and the `calibration` source citation no longer repeat the word "the". No verdict, number or schema changed; no expected test result was edited and the generated docs are unchanged. The source manifest pin changes, so consumers must repin; the tool inventory pin does not change.
+- CI installs `jsonschema` 4.23.0, so every tested result is now validated against its output schema in CI (REQ-ROB-022).
+- Requirements: every behaviour listed as GAP-ROB-01 to 14 now has a test. REQ-ROB-012 again covers all five parse limits; REQ-ROB-025 to 034 added for bridge framing, the response limit, `ping`, initialize, notifications, envelope and internal errors, caller thresholds, and `gait_check` up-axis and gravity.
 - Requirements: added REQ-ROB-013 to 022 for tested behaviour; narrowed REQ-ROB-012 to the tested depth limit and wire profile; listed untested behaviour as GAP-ROB-01 to 14.
 
 ### Fixed

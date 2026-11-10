@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-SAR |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -14,6 +14,27 @@
 > Organized after [NPR 7150.2D](https://nodis3.gsfc.nasa.gov/displayAll.cfm?Internal_ID=N_PR_7150_002D_&page_name=all), [NASA-STD-8739.8B](https://standards.nasa.gov/standard/nasa/nasa-std-87398) and the [NASA Software Engineering Handbook](https://swehb.nasa.gov/display/SWEHBVD/7.18+-+Documentation+Guidance) documentation guidance. This is not a NASA compliance determination or certification. The software classification is a self-assessed analog (Class E, not safety-critical); no NASA authority, independent verification and validation, or hazard analysis is asserted. The document describes the implementation inspected at the baseline commit.
 
 Rolling record, newest entry first (SWEHB 5.21, 5.22, 5.23, 5.25, 5.26 and the 5.03 summary, tailored).
+
+## Entry 2026-11-10 — findings sweep (commit d664527)
+
+- Analyzed by: the family findings sweep, agent-assisted for the maintainer. Agent analysis is not independent.
+- Inputs: branch `fix/findings-sweep` at d664527 (tests and CI change) plus this records change; findings F-3, F-5 and F-8 and GAP-ROB-01 to 14 from the 2026-11-08 entry.
+
+### What changed
+
+- Tests: 17 tests named after their gap (`test_gap_rob_01` to `14`) in `tests/test_bridge.py` and `tests/test_tools.py`, plus a doubled-word check over citation and Evidence text and a CI guard that fails when `CI=true` and `jsonschema` is missing. Before writing them the sweep confirmed the code already behaved as SRS §8 described; each test was shown to fail when its behaviour was deliberately broken in a scratch copy (19 deliberate breaks). The `ok()` helper in `tests/test_tools.py` no longer relies on `assert`, which `-O` removes.
+- CI: the `tests` job installs `jsonschema` 4.23.0, so REQ-ROB-022 output-schema conformance now runs in CI (F-3).
+- Tool output: the doubled word in the `squash_check` tolerance Evidence note and in the `calibration` source citation was removed (F-5). This changes those two strings in tool output; no expected test value changed, and the generated docs did not change.
+- Requirements: REQ-ROB-012 widened back to all five parse limits; REQ-ROB-025 to 034 added for the newly tested behaviour; SRS §8 rows marked closed with their tests.
+
+### Testing analysis
+
+- Trace check: `{"components": 13, "matrix_rows": 34, "problems": 0, "requirements": 34, "tests": 68, "tests_traced": 68}`. Of 68 test methods, 65 trace to requirements and the other 3 are `DocTests` infrastructure. The doubled-word test traces through the `InventoryTests` class reference and is also listed as supporting, because it guards text rather than behaviour.
+- Output-schema validation had never run in CI before this change. It was run locally with `jsonschema` 4.23.0 on Python 3.12 and every receipt validated. The pull request lists the exact commands and results on a clean export.
+
+### Findings status
+
+F-3, F-5 and F-8 are closed by d664527 (see the table in the 2026-11-08 entry). F-6 (an internal project name in a test method name) and F-7 (no branch protection on `main`) stay open and wait on the maintainer.
 
 ## Entry 2026-11-08 — baseline b4de079 (docs/nasa-standard PR)
 
@@ -69,12 +90,12 @@ No pyflakes-class (F) findings. The E731/E741/E402 items are style, not defects.
 |---|---|---|---|---|---|
 | F-1 | S4 | Matrix said REQ-ROB-012 is verified by `tests/test_tools.py`; the test is in `tests/test_bridge.py`, and only the depth limit is tested | verification matrix 1.1 | — | Closed in this PR |
 | F-2 | S4 | Configuration document claimed gitleaks and trufflehog run before every push; the repository has no trufflehog configuration and CI runs gitleaks only | SCMP 1.1 | — | Closed in this PR |
-| F-3 | S3 | CI does not install `jsonschema`, so REQ-ROB-022 (output-schema conformance) is never checked in CI | `.github/workflows/ci.yml` | none filed | Open (code/CI change, out of scope for a docs lane) |
+| F-3 | S3 | CI does not install `jsonschema`, so REQ-ROB-022 (output-schema conformance) is never checked in CI | `.github/workflows/ci.yml` | none filed | Closed in d664527: CI installs `jsonschema` 4.23.0 and `InventoryTests.test_output_schemas_are_validated_when_running_in_ci` fails if it is missing |
 | F-4 | S4 | ICD omitted `ping` and said decimal strings may cross the bridge; the bridge rejects all non-integer numbers and no schema uses decimal strings | ICD 1.1 | — | Closed in this PR |
-| F-5 | S4 | Duplicated word "the the" in two Evidence/citation strings | `foundation_robotics/tools.py` (squash evidence), `foundation_robotics/sources.py` (`calibration` source) | none filed | Open (code change; alters tool output text) |
+| F-5 | S4 | A word was repeated twice in a row in two Evidence/citation strings | `foundation_robotics/tools.py` (squash evidence), `foundation_robotics/sources.py` (`calibration` source) | none filed | Closed in d664527: repeated word removed; `InventoryTests.test_tool_text_has_no_doubled_words` guards it. Changes tool output text |
 | F-6 | S3 | A test method name in `ScaleTimingTests` carries an internal project name; public code should use a generic name | `tests/test_tools.py` | none filed | Open (code change) |
 | F-7 | S4 | `main` has no branch protection; change control is by convention | GitHub settings | none filed | Open (settings decision for the owner) |
-| F-8 | S3 | Fourteen behaviours have no test (GAP-ROB-01 to 14), mostly bridge error paths | SRS §8 | none filed | Open |
+| F-8 | S3 | Fourteen behaviours have no test (GAP-ROB-01 to 14), mostly bridge error paths | SRS §8 | none filed | Closed in d664527: each gap has a test named after it, traced to REQ-ROB-010, 012 and 025 to 034 |
 
 ### Overall assessment
 
@@ -85,3 +106,4 @@ The code matches its documentation after the corrections above. All 22 requireme
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | b4de079 | First entry | docs/nasa-standard PR |
+| 1.1 | 2026-11-10 | d664527 | Entry for the findings sweep; F-3, F-5 and F-8 closed; F-6 and F-7 left open | PR from the family findings sweep |

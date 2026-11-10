@@ -50,5 +50,5 @@ The bridge treats every request as untrusted. It parses with fixed limits, accep
 | Most thresholds are `CHECK`, calibrated on few cases | A pass or fail can be wrong for quadrupeds, runs, giants or robots | none filed |
 | Input schemas do not encode every rule | A schema-valid request can be refused as `tool_error` | none filed |
 | Mixed revolute and prismatic chains | The singular-value ratio mixes units; the receipt says so | none filed |
-| Many bridge error paths are untested | See requirements §8, GAP-ROB-01 to 14 | none filed |
-| CI does not validate results against the output schemas | A schema drift would pass CI | none filed |
+
+Closed on 2026-11-10: the bridge error paths and other behaviours listed as GAP-ROB-01 to 14 now have tests (see [requirements §8](../../requirements/requirements.md#8-untested-behaviour-gaps)), and CI validates every tested result against its output schema.

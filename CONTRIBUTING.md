@@ -13,7 +13,7 @@ Contributions are accepted under GPL-3.0-only.
 
 ## Development setup
 
-Python 3.11 or newer, run from the repository root. There is nothing to install. `jsonschema` is optional; with it, the tests also validate every result against its output schema.
+Python 3.11 or newer, run from the repository root. There is nothing to install. `jsonschema` is optional; with it, the tests also validate every result against its output schema. CI installs it.
 
 ## Local checks (the same as CI)
 
