@@ -15,8 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - run: uv run --no-project --python 3.12 python -B -m unittest discover -s tests -t .
-      - run: uv run --no-project --python 3.12 python -B -O -m unittest discover -s tests -t .
+      - run: uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -c "import jsonschema"
+      - run: uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -m unittest discover -s tests -t .
+      - run: uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -O -m unittest discover -s tests -t .
 
   gitleaks:
     runs-on: ubuntu-latest

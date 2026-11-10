@@ -51,7 +51,7 @@ SOURCES = {
     "kinematics": "Kinematic identity: speed = stride length / cycle time. A planted foot that does not meet it must "
                   "slide.",
     "calibration": "foundation_robotics/data/calibration.json: the known-good and known-bad motion this threshold was "
-                   "tried on (an internal motion trial, the the giant character timeline).",
+                   "tried on (an internal motion trial, the giant character timeline).",
 }
 
 

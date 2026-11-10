@@ -1,8 +1,12 @@
+import json
 import math
+import os
+import re
 import unittest
 
+from foundation_robotics.gait import THRESHOLDS as DEFAULTS_GAIT
 from foundation_robotics.sources import CALIBRATION, DEFAULTS, SOURCES
-from foundation_robotics.tools import TOOL_NAMES, run
+from foundation_robotics.tools import TOOL_NAMES, input_sha256, run
 from foundation_robotics_bridge.schemas import tool_definitions
 
 try:
@@ -25,8 +29,8 @@ def invoke(name, arguments):
 
 def ok(name, arguments):
     failed, assessment, receipt = invoke(name, arguments)
-    assert not failed, receipt["error"]
-    assert receipt["evidence"]
+    if failed or not receipt["evidence"]:
+        raise AssertionError(receipt["error"] or "no evidence")
     return assessment, receipt["result"]
 
 
@@ -363,6 +367,132 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(tuple(t["name"] for t in tool_definitions()), TOOL_NAMES)
         for name in TOOL_NAMES:
             self.assertTrue(refused(self, name, {"unexpected": 1}))
+
+    def test_gap_rob_12_error_receipts_carry_the_input_hash(self):
+        cases = [(name, {"unexpected": 1}) for name in TOOL_NAMES] + [
+            ("scale_timing", {"height_mm": 0}), ("gait_check", {"leg_length_mm": 928, "speed_mm_s": 1, "gait": "hop"}),
+            ("balance_check", {"fps_milli": 30000, "frames": []}), ("ik_check", {**LEG, "poses": []}),
+            ("mechanism_check", {"kind": "cam"}), ("squash_check", {"frames": [{"scale_permille": [1000, 0, 1000]}]})]
+        hashes = set()
+        for name, arguments in cases:
+            refused(self, name, arguments)
+            receipt = run(name, arguments)[2]
+            self.assertEqual(receipt["input_sha256"], input_sha256(arguments), (name, arguments))
+            self.assertRegex(receipt["input_sha256"], r"\A[0-9a-f]{64}\Z")
+            hashes.add(receipt["input_sha256"])
+        self.assertEqual(len(hashes), len({json.dumps(a, sort_keys=True) for _, a in cases}))
+
+    def test_tool_text_has_no_doubled_words(self):
+        doubled = re.compile(r"\b(\w+)\s+\1\b", re.IGNORECASE)
+        texts = dict(SOURCES)
+        for case in CALIBRATION["cases"]:
+            for entry in run(case["tool"], case["arguments"])[2]["evidence"]:
+                basis = entry["evidence"]["basis"]
+                texts[f"{case['id']}:{entry['applies_to']}"] = basis["source"] + " " + basis["note"]
+        found = {key: doubled.search(text).group(0) for key, text in texts.items() if doubled.search(text)}
+        self.assertEqual(found, {})
+
+    def test_output_schemas_are_validated_when_running_in_ci(self):
+        if os.environ.get("CI", "").lower() == "true":
+            self.assertIsNotNone(jsonschema, "CI must install jsonschema so output-schema conformance runs")
+
+
+class ThresholdOverrideTests(unittest.TestCase):
+    def test_gap_rob_13_caller_thresholds_replace_defaults_and_are_labelled(self):
+        arguments = {"leg_length_mm": 928, "speed_mm_s": 2500, "stride_mm": 2200, "cycle_ms": 880}
+        failed, assessment, receipt = invoke("gait_check", arguments)
+        self.assertEqual(receipt["result"]["threshold_sources"]["froude_max"], "default")
+        self.assertIn("froude_permille", failing(receipt["result"]))
+        self.assertNotIn("caller", {e["evidence"]["basis"]["kind"] for e in receipt["evidence"]})
+        failed, assessment, receipt = invoke("gait_check", {**arguments, "thresholds": {"froude_max": 900}})
+        result = receipt["result"]
+        self.assertFalse(failed)
+        self.assertEqual(result["thresholds"]["froude_max"], 900)
+        self.assertEqual(result["thresholds"]["froude_min"], DEFAULTS["gait"]["froude_min"]["value"])
+        self.assertEqual(result["threshold_sources"], {k: "caller" if k == "froude_max" else "default"
+                                                       for k in DEFAULTS_GAIT})
+        froude = next(c for c in result["checks"] if c["check"] == "froude_permille")
+        self.assertEqual((froude["max"], froude["status"]), (900, "pass"))
+        caller = [e for e in receipt["evidence"] if e["evidence"]["basis"]["kind"] == "caller"]
+        self.assertEqual(len(caller), 1)
+        self.assertEqual((caller[0]["applies_to"], caller[0]["evidence"]["status"]), ("result.thresholds", "CHECK"))
+        self.assertIn("froude_max", caller[0]["evidence"]["basis"]["note"])
+        cited_defaults = [e for e in receipt["evidence"] if e["evidence"]["basis"]["source"] == SOURCES["calibration"]]
+        self.assertEqual(len(cited_defaults), 1)
+        self.assertNotIn("froude_max", cited_defaults[0]["evidence"]["basis"]["note"])
+
+    def test_gap_rob_13_every_tool_labels_a_full_caller_override(self):
+        cases = {"gait_check": {"leg_length_mm": 928, "speed_mm_s": 1348, "cycle_ms": 1200},
+                 "balance_check": {"fps_milli": 30000, "frames": sway(40, 0.5)},
+                 "ik_check": {**LEG, "poses": [{"q": [-262, 524]}]},
+                 "mechanism_check": {"kind": "rotor_strobe", "blades": 4, "speed_mrad_s": 10000, "fps_milli": 24000},
+                 "squash_check": {"frames": [{"scale_permille": [1180, 780, 1180]}]}}
+        for name, arguments in cases.items():
+            section = {"gait_check": "gait", "balance_check": "balance", "ik_check": "ik",
+                       "mechanism_check": "mechanism", "squash_check": "squash"}[name]
+            supplied = {k: v["value"] + 1 for k, v in DEFAULTS[section].items()}
+            failed, _, receipt = invoke(name, {**arguments, "thresholds": supplied})
+            self.assertFalse(failed, receipt["error"])
+            result = receipt["result"]
+            self.assertEqual(result["thresholds"], supplied, name)
+            self.assertEqual(set(result["threshold_sources"].values()), {"caller"}, name)
+            kinds = [(e["evidence"]["basis"]["kind"], e["evidence"]["status"]) for e in receipt["evidence"]
+                     if e["applies_to"] == "result.thresholds"]
+            self.assertEqual(kinds, [("caller", "CHECK")], name)
+        squeeze = {"frames": [{"scale_permille": [1180, 780, 1180]}]}
+        self.assertEqual(invoke("squash_check", squeeze)[1], "thresholds_not_met")
+        self.assertEqual(invoke("squash_check", {**squeeze, "thresholds": {"volume_error_max": 90}})[1],
+                         "thresholds_met")
+
+
+class GravityAndAxisTests(unittest.TestCase):
+    def test_gap_rob_14_gait_check_honours_up_axis(self):
+        y_up = walk_track()
+        z_up = {**y_up, "up_axis": "z", "feet": [
+            {"id": f["id"], "track": {"positions_mm": [[p[0], p[2], p[1]] for p in f["track"]["positions_mm"]],
+                                      "contact": f["track"]["contact"]}} for f in y_up["feet"]]}
+        _, a = ok("gait_check", y_up)
+        assessment, b = ok("gait_check", z_up)
+        self.assertEqual(assessment, "thresholds_met")
+        self.assertEqual((a["measured"], a["feet"], a["checks"]), (b["measured"], b["feet"], b["checks"]))
+        self.assertEqual(ok("gait_check", {**y_up, "up_axis": "y"})[1], a)
+        _, wrong = ok("gait_check", {**z_up, "up_axis": "y"})
+        self.assertNotEqual(wrong["measured"]["stride_mm"], a["measured"]["stride_mm"])
+        refused(self, "gait_check", {**y_up, "up_axis": "x"})
+
+    def test_gap_rob_14_scale_timing_honours_gravity(self):
+        moon_g = 1625
+        failed, _, earth = invoke("scale_timing", {"leg_length_mm": 928})
+        failed, _, moon = invoke("scale_timing", {"leg_length_mm": 928, "gravity_mm_s2": moon_g})
+        self.assertFalse(failed)
+        e, m = earth["result"], moon["result"]
+        self.assertEqual((e["gravity_source"], e["gravity_mm_s2"]), ("standard", 9807))
+        self.assertEqual((m["gravity_source"], m["gravity_mm_s2"]), ("caller", moon_g))
+        ratio = math.sqrt(9806.65 / moon_g)
+        for we, wm in zip(e["walk"], m["walk"]):
+            self.assertEqual((we["froude_permille"], we["stride_mm"]), (wm["froude_permille"], wm["stride_mm"]))
+            self.assertAlmostEqual(wm["cycle_ms"] / we["cycle_ms"], ratio, delta=0.005)
+            self.assertAlmostEqual(we["speed_mm_s"] / wm["speed_mm_s"], ratio, delta=0.005)
+        self.assertAlmostEqual(m["leg_swing_period_ms"] / e["leg_swing_period_ms"], ratio, delta=0.005)
+        self.assertEqual(m["limits"]["max_walk_speed_mm_s"], round(math.sqrt(moon_g * 928)))
+        gravity = [x for x in moon["evidence"] if x["applies_to"] == "arguments.gravity_mm_s2"]
+        self.assertEqual([(x["evidence"]["basis"]["kind"], x["evidence"]["status"]) for x in gravity],
+                         [("caller", "CHECK")])
+        self.assertFalse([x for x in earth["evidence"] if x["applies_to"] == "arguments.gravity_mm_s2"])
+        for g in (0, -1, 10 ** 6 + 1, 9806.65, "9806"):
+            refused(self, "scale_timing", {"leg_length_mm": 928, "gravity_mm_s2": g})
+
+    def test_gap_rob_14_gait_check_honours_gravity(self):
+        arguments = {"leg_length_mm": 928, "speed_mm_s": 1348, "cycle_ms": 1200}
+        assessment, earth = ok("gait_check", arguments)
+        self.assertEqual(earth["measured"]["froude_permille"], round(1348 ** 2 / (9806.65 * 928) * 1000))
+        self.assertNotIn("froude_permille", failing(earth))
+        assessment, moon = ok("gait_check", {**arguments, "gravity_mm_s2": 1625})
+        self.assertEqual(moon["measured"]["froude_permille"], round(1348 ** 2 / (1625 * 928) * 1000))
+        self.assertIn("froude_permille", failing(moon))
+        self.assertEqual(assessment, "thresholds_not_met")
+        self.assertEqual(moon["expected"]["preferred"]["speed_mm_s"], round(math.sqrt(0.25 * 1625 * 928)))
+        refused(self, "gait_check", {**arguments, "gravity_mm_s2": 0})
 
 
 if __name__ == "__main__":
