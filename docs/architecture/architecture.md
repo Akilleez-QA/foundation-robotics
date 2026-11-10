@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-SDD |
-| Version | 2.1 |
+| Version | 2.2 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-09 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -74,16 +74,16 @@ sequenceDiagram
 
 | ID | Path | Responsibility | Inputs and outputs | Requirements |
 |---|---|---|---|---|
-| C-SCALE | `foundation_robotics/scale.py` | Leg length from caller or Winter hip height; dynamic-similarity factors; walk table; pendulum and fall times | arguments to `timing_estimated` result | REQ-ROB-001 |
-| C-GAIT | `foundation_robotics/gait.py` | Foot-track analysis (strikes, stance, stride, slide), Froude, stride ratio, kinematic mismatch, duty, asymmetry | arguments to verdict and checks | REQ-ROB-002 |
+| C-SCALE | `foundation_robotics/scale.py` | Leg length from caller or Winter hip height; dynamic-similarity factors; walk table; pendulum and fall times | arguments to `timing_estimated` result | REQ-ROB-001, REQ-ROB-034 |
+| C-GAIT | `foundation_robotics/gait.py` | Foot-track analysis (strikes, stance, stride, slide), Froude, stride ratio, kinematic mismatch, duty, asymmetry | arguments to verdict and checks | REQ-ROB-002, REQ-ROB-033, REQ-ROB-034 |
 | C-BALANCE | `foundation_robotics/balance.py` | Convex hull of contacts, signed margins, Savitzky-Golay derivatives of the COM, cart-table ZMP, capture point, flight gravity | arguments to verdict and per-frame margins | REQ-ROB-003, REQ-ROB-019, REQ-ROB-020 |
 | C-IK | `foundation_robotics/kinematics.py` | Product-of-exponentials forward kinematics, positional Jacobian, singular values by Jacobi rotation | arguments to verdict and per-pose rows | REQ-ROB-004 |
 | C-MECH | `foundation_robotics/mechanisms.py` | Gear trains with shaft coupling, mesh phase, slider-crank, four-bar (Grashof, loop closure), rotor strobe | arguments (one of five kinds) to verdict and detail | REQ-ROB-005 |
 | C-SQUASH | `foundation_robotics/squash.py` | Volume per frame and the conserving lateral scale | arguments to verdict and per-frame rows | REQ-ROB-006 |
-| C-MEASURES | `foundation_robotics/measures.py` | Shared argument validation, bounds, rounding, `check` and `verdict`, threshold merge, gravity and up-axis | values to validated values or ToolInputError | REQ-ROB-015, REQ-ROB-021 |
+| C-MEASURES | `foundation_robotics/measures.py` | Shared argument validation, bounds, rounding, `check` and `verdict`, threshold merge, gravity and up-axis | values to validated values or ToolInputError | REQ-ROB-015, REQ-ROB-021, REQ-ROB-032, REQ-ROB-033 |
 | C-SOURCES | `foundation_robotics/sources.py`, `foundation_robotics/data/defaults.json`, `foundation_robotics/data/calibration.json` | Load defaults and calibration once at import; citation texts | none to dictionaries | REQ-ROB-017, REQ-ROB-018 |
-| C-TOOLS | `foundation_robotics/tools.py` | Tool table, Evidence entries per tool, input hash, boundary block, error capture | name and arguments to isError, assessment, receipt | REQ-ROB-008, REQ-ROB-009, REQ-ROB-010, REQ-ROB-015 |
-| C-SERVER | `foundation_robotics_bridge/server.py`, `foundation_robotics_bridge/__main__.py` | Line framing, wire limits, JSON-RPC envelope, session state, response encoding, exit codes | stdin bytes to stdout bytes | REQ-ROB-011, REQ-ROB-012, REQ-ROB-013, REQ-ROB-016 |
+| C-TOOLS | `foundation_robotics/tools.py` | Tool table, Evidence entries per tool, input hash, boundary block, error capture | name and arguments to isError, assessment, receipt | REQ-ROB-008, REQ-ROB-009, REQ-ROB-010, REQ-ROB-015, REQ-ROB-032 |
+| C-SERVER | `foundation_robotics_bridge/server.py`, `foundation_robotics_bridge/__main__.py` | Line framing, wire limits, JSON-RPC envelope, session state, response encoding, exit codes | stdin bytes to stdout bytes | REQ-ROB-011, REQ-ROB-012, REQ-ROB-013, REQ-ROB-016, REQ-ROB-025, REQ-ROB-026, REQ-ROB-027, REQ-ROB-028, REQ-ROB-029, REQ-ROB-030, REQ-ROB-031 |
 | C-SCHEMAS | `foundation_robotics_bridge/schemas.py` | JSON Schema (2020-12) input and output schema per tool; catalog order | none to tool definitions | REQ-ROB-014, REQ-ROB-022 |
 | C-MANIFEST | `tools/build_manifest.py`, `SOURCE-MANIFEST.json` | Hash the shipped tree; print file count, manifest SHA-256 and inventory SHA-256 | tree to manifest and pins | REQ-ROB-007 |
 | C-DOCTOOLS | `tools/check_trace.py`, `tools/gen_docs.py`, `tools/gen_reports.py` | Trace and link check; generated reference pages, with every schema field including union branches and map values; generated test report and version description, whose verdict fails on any non-ok outcome, trace problem or stale manifest | docs and tests to pass/fail and generated pages | REQ-ROB-023, REQ-ROB-024 |
@@ -145,3 +145,4 @@ Memory is bounded by the input frame limit (64 KiB per request) and the array li
 | 1.0 | 2026-10-30 | d779a9f | Context, components, tools, data flow, decisions | Initial commit |
 | 2.0 | 2026-11-08 | b4de079 | Family standard: metadata, decisions table, static and runtime views, component IDs with requirements, execution, failure handling, resources, quality attributes, limitations | docs/nasa-standard PR |
 | 2.1 | 2026-11-09 | d5bbe35 | C-DOCTOOLS allocated REQ-ROB-023 and REQ-ROB-024 | PR fixing the 2026-11-09 backfill-review findings |
+| 2.2 | 2026-11-10 | d664527 | Components allocated the requirements that closed GAP-ROB-01 to 14: C-SERVER REQ-ROB-025 to 031, C-MEASURES and C-TOOLS REQ-ROB-032, C-GAIT REQ-ROB-033 and 034, C-MEASURES REQ-ROB-033, C-SCALE REQ-ROB-034 | PR from the family findings sweep |

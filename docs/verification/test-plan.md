@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-STP |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -22,7 +22,7 @@ All verification is automated with Python's `unittest`, run from the repository 
 | Level | What it covers | Location | Command |
 |---|---|---|---|
 | Unit | Each tool's arithmetic, checks, verdicts and refusals; calibration replay; default provenance | `tests/test_tools.py` | `python -B -m unittest discover -s tests -t .` |
-| Integration | The bridge as a subprocess: handshake, catalog, a tool call, tool errors, wire errors, argv refusal, source manifest | `tests/test_bridge.py` | same |
+| Integration | The bridge as a subprocess and in process: handshake, catalog, a tool call, tool errors, wire limits and errors, framing and exit status, `ping`, notifications, envelope errors, internal errors, argv refusal, source manifest | `tests/test_bridge.py` | same |
 | Documentation | Trace check, dead links, generated-docs freshness | `tests/test_docs.py` | same |
 | Regression | Full suite in normal and optimized (`-O`) mode on every push and pull request to `main` | `.github/workflows/ci.yml` job `tests` | both commands in §3 |
 | Configuration | Manifest regenerated and compared; secret scan | CI jobs `manifest` and `gitleaks` | see §3 |
@@ -35,23 +35,24 @@ No performance or security penetration tests exist.
 |---|---|---|
 | OS | `ubuntu-latest` GitHub-hosted runner | `.github/workflows/ci.yml` |
 | Runtime | CPython 3.12 via `astral-sh/setup-uv@v7`; supported minimum 3.11 (README) | ci.yml |
-| Dependencies | None. `jsonschema` is optional and not installed in CI | `tests/test_tools.py` |
+| Dependencies | `jsonschema` 4.23.0 in CI, for the output-schema checks (REQ-ROB-022); optional locally. The code itself needs none | ci.yml, `tests/test_tools.py` |
 | External services | None | — |
 
 CI commands, copied from `.github/workflows/ci.yml`:
 
 ```sh
-uv run --no-project --python 3.12 python -B -m unittest discover -s tests -t .
-uv run --no-project --python 3.12 python -B -O -m unittest discover -s tests -t .
+uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -c "import jsonschema"
+uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -m unittest discover -s tests -t .
+uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -O -m unittest discover -s tests -t .
 uv run --no-project --python 3.12 python -B tools/build_manifest.py
 git diff --exit-code SOURCE-MANIFEST.json
 gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .
 ```
 
-CI pins gitleaks 8.28.0. Locally, `python -B` with any Python 3.11 or newer is equivalent for the first two commands. To also run the output-schema checks (REQ-ROB-022):
+CI pins gitleaks 8.28.0. Locally, `python -B` with any Python 3.11 or newer runs the same tests; without `jsonschema` the output-schema checks are skipped. To run them as CI does (REQ-ROB-022):
 
 ```sh
-uv run --no-project --python 3.12 --with jsonschema python -B -m unittest discover -s tests -t .
+uv run --no-project --python 3.12 --with jsonschema==4.23.0 python -B -m unittest discover -s tests -t .
 ```
 
 ## 4. Pass criteria and acceptance
@@ -88,8 +89,7 @@ Not measured. No coverage tool is in CI, and the project uses the standard libra
 
 ## 8. Test risks and limitations
 
-- CI does not install `jsonschema`, so REQ-ROB-022 is checked only in local runs that add it (SAR finding F-3).
-- Many bridge error paths have no test (SRS §8, GAP-ROB-01 to 11).
+- Every behaviour once listed in SRS §8 (GAP-ROB-01 to 14) now has a test; no gap is open. CI installs `jsonschema`, so REQ-ROB-022 runs in CI (SAR finding F-3, closed).
 - Calibration covers human-scale walks, one giant and one squash; thresholds for balance, IK and mechanisms are tried only on constructed cases. See [limitations](../guides/explanation/limitations.md).
 - Tests use exact integer expectations; a change to rounding or a default changes them. Never edit an expected value to obtain a pass (CONTRIBUTING).
 
@@ -102,3 +102,4 @@ See the [verification matrix](verification-matrix.md).
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | b4de079 | Initial baseline | docs/nasa-standard PR |
+| 1.1 | 2026-11-10 | d664527 | CI commands now install `jsonschema` 4.23.0; integration scope covers the new bridge tests; test risks no longer list the closed gaps or F-3 | PR from the family findings sweep |

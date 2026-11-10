@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-SMP |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -100,8 +100,8 @@ Reviewed at every release; likelihood (L) and consequence (C) 1 to 5.
 |---|---|---|---|---|---|---|
 | R-1 | A user treats a `thresholds_met` verdict as approval of a real robot or machine motion | 2 | 4 | Boundary block in every receipt; limitations page; classification statement | Open | — |
 | R-2 | Thresholds marked `CHECK` misjudge motion outside the calibration set (quadrupeds, runs, robots) | 4 | 2 | Status reported per default; caller overrides labelled; calibration replay in CI | Open | — |
-| R-3 | Output schema drifts from results unnoticed because CI lacks `jsonschema` | 3 | 2 | Local check documented; SAR finding F-3 | Open | — |
-| R-4 | Untested bridge error paths regress (GAP-ROB-01 to 11) | 3 | 2 | Listed in SRS §8; candidate tests | Open | — |
+| R-3 | Output schema drifts from results unnoticed because CI lacks `jsonschema` | 3 | 2 | CI installs `jsonschema` 4.23.0 and a test fails if it is missing under CI; SAR finding F-3 closed | Mitigated | — |
+| R-4 | Bridge error paths regress (formerly untested, GAP-ROB-01 to 11) | 3 | 2 | Tests for every path, traced to REQ-ROB-012 and REQ-ROB-025 to 031 | Mitigated | — |
 | R-5 | A host runs stale code because the manifest was not regenerated | 2 | 3 | CI `manifest` job; manifest test; host repins | Mitigated | — |
 
 ## 13. Measurement
@@ -121,3 +121,4 @@ See the [documentation index](../README.md).
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | b4de079 | Initial baseline | docs/nasa-standard PR |
+| 1.1 | 2026-11-10 | d664527 | R-3 and R-4 mitigated: CI runs the output-schema checks and every bridge error path has a test | PR from the family findings sweep |

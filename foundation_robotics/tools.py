@@ -141,7 +141,7 @@ def _squash(arguments):
     return assessment, result, [
         cited("result.frames", "thomas_johnston", "Squash and stretch keeps the volume: scale x times y times z stays "
               "1; conserving_lateral_permille is the side scale that would.")] + threshold_evidence(
-        "squash", result, "The tolerance is a starting value tried on constructed cases and the the giant character squeeze "
+        "squash", result, "The tolerance is a starting value tried on constructed cases and the giant character squeeze "
         "(+8.6 % volume), not yet judged by a person (I3).")
 
 

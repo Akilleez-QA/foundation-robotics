@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FROBO-SRS |
-| Version | 2.1 |
+| Version | 2.2 |
 | Status | Draft |
 | Owner | Akilleez-QA |
-| Date | 2026-11-09 |
+| Date | 2026-11-10 |
 | Baseline commit | b4de079f2d99114e5efe6b204704df57d392e454 |
 | Applies to | foundation-robotics main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -215,6 +215,36 @@ The generated tool catalog shall list every field path of every tool's input and
 - Verification: T
 - Status: Baselined
 
+### REQ-ROB-032 — caller thresholds
+
+When a judged tool's call supplies `thresholds`, the tool shall use each supplied value in place of its default and keep the default for every other key, label each key `caller` or `default` in `result.threshold_sources`, and add one Evidence entry for `result.thresholds` with basis kind `caller` and status `CHECK`.
+
+- Rationale: a caller's judgment must never read as a calibrated default (closes GAP-ROB-13).
+- Derivation: `foundation_robotics/measures.py`, `foundation_robotics/tools.py`
+- Allocated to: C-MEASURES, C-TOOLS
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-033 — up-axis invariance in gait_check
+
+`gait_check` shall give identical measured values, per-foot rows and checks for the same foot tracks expressed with `up_axis` `y` and with `up_axis` `z` (axes swapped), and shall refuse any other `up_axis`.
+
+- Rationale: callers come from y-up (three.js) and z-up (Blender) tools (closes GAP-ROB-14 for the axis).
+- Derivation: `foundation_robotics/measures.py`, `foundation_robotics/gait.py`
+- Allocated to: C-GAIT, C-MEASURES
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-034 — caller gravity in scale_timing and gait_check
+
+When `gravity_mm_s2` is supplied, `scale_timing` and `gait_check` shall use that value instead of standard gravity (9806.65 mm/s²): `scale_timing` for its walk table, walk-run limits and pendulum times, `gait_check` for the measured Froude number and the expected walk. `scale_timing` shall also report `gravity_source` `caller` with a `caller` Evidence entry for `arguments.gravity_mm_s2`.
+
+- Rationale: reduced-gravity scenes must be timed and judged at their own gravity (closes GAP-ROB-14 for gravity).
+- Derivation: `foundation_robotics/measures.py`, `foundation_robotics/scale.py`, `foundation_robotics/gait.py`
+- Allocated to: C-SCALE, C-GAIT
+- Verification: T
+- Status: Baselined
+
 ## 4. Interface requirements
 
 ### REQ-ROB-011 — bounded execution environment
@@ -229,9 +259,9 @@ The bridge shall run with the Python standard library only, open no network conn
 
 ### REQ-ROB-012 — wire profile
 
-The bridge shall reject a frame nested deeper than 32 levels with error `-32002`, and shall reject duplicate object keys, non-integer numbers and `NaN` with error `-32700`.
+The bridge shall reject with error `-32002` a frame over 65536 bytes, nested deeper than 32 levels, holding more than 16384 JSON nodes, a string over 1024 characters or an integer over 15 digits, and shall reject duplicate object keys, non-integer numbers and `NaN` with error `-32700`.
 
-- Rationale: bounded parsing on both sides; numbers cross the wire only as integers in milli-SI units. See [ICD §4](../icd/icd-cstack.md#4-errors-and-result-semantics).
+- Rationale: bounded parsing on both sides; numbers cross the wire only as integers in milli-SI units. See [ICD §4](../icd/icd-cstack.md#4-errors-and-result-semantics). The frame, node, string and integer limits closed GAP-ROB-01 to 04.
 - Derivation: `foundation_robotics_bridge/server.py`
 - Allocated to: C-SERVER
 - Verification: T
@@ -274,12 +304,82 @@ Every tool receipt shall validate against the tool's published `outputSchema`, a
 - Rationale: the host re-validates results against the pinned output schema.
 - Derivation: `foundation_robotics_bridge/schemas.py`
 - Allocated to: C-SCHEMAS
-- Verification: T (runs only when `jsonschema` is importable; CI does not install it, see SAR finding F-3)
+- Verification: T (runs when `jsonschema` is importable; CI installs `jsonschema` 4.23.0 and fails if it is missing, closing SAR finding F-3)
+- Status: Baselined
+
+### REQ-ROB-025 — oversized or unterminated line
+
+When an input line is longer than 65537 bytes including its newline, or the input ends without a newline, the bridge shall send one `-32002` error with `id` null, read nothing further and exit with status 2.
+
+- Rationale: the bridge must never act on a truncated frame or wait on an unbounded one (closes GAP-ROB-05). See [ICD §2](../icd/icd-cstack.md#2-interface-type-and-transport).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-026 — response size limit
+
+A response whose encoding exceeds 1048576 bytes shall be replaced by a `-32002` error with message "Result withheld" and the request's `id`.
+
+- Rationale: the host reads bounded frames (closes GAP-ROB-06). See [ICD §6](../icd/icd-cstack.md#6-security-and-input-bounds).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-027 — ping
+
+`ping` with no params or `{}` shall return `{}` both before and after `initialize`, without initializing the session.
+
+- Rationale: the host checks liveness without starting a session (closes GAP-ROB-07). See [ICD §3](../icd/icd-cstack.md#3-messages-and-data-elements).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-028 — one initialize with the published protocol
+
+The bridge shall answer `initialize` with any `protocolVersion` other than `foundation-robotics-jsonrpc/1` with error `-32001`, leaving the session uninitialized, and a second `initialize` after a successful one with error `-32000`.
+
+- Rationale: a session runs under exactly one known protocol (closes GAP-ROB-08). See [ICD §4](../icd/icd-cstack.md#4-errors-and-result-semantics).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-029 — notifications
+
+A message without an `id` shall get no reply and shall not be executed: it neither initializes the session nor runs a tool.
+
+- Rationale: every executed request has a reply the host can match (closes GAP-ROB-09). See [ICD §2](../icd/icd-cstack.md#2-interface-type-and-transport).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-030 — envelope, method and params errors
+
+The bridge shall answer a batch, a non-object message, an extra envelope field, a `jsonrpc` other than `"2.0"`, a missing, empty or non-string method, and a `null`, non-string non-integer or over-128-character `id` with error `-32600` and `id` null; an unknown method with `-32601`; and `tools/call` params that are not exactly `name` and an object `arguments` with `-32602`.
+
+- Rationale: malformed envelopes fail closed with a code the host can act on (closes GAP-ROB-10). See [ICD §4](../icd/icd-cstack.md#4-errors-and-result-semantics).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
+- Status: Baselined
+
+### REQ-ROB-031 — unexpected exception
+
+An unexpected exception while running a tool shall return error `-32603` with the request's `id`, no `result`, and a fixed message that does not include the exception text.
+
+- Rationale: a fault must never look like an evidence result or leak internal state (closes GAP-ROB-11). See [ICD §4](../icd/icd-cstack.md#4-errors-and-result-semantics).
+- Derivation: `foundation_robotics_bridge/server.py`
+- Allocated to: C-SERVER
+- Verification: T
 - Status: Baselined
 
 ## 5. Non-functional requirements
 
-Reusability (SWE-147), portability and design constraints are covered by REQ-ROB-007 (pinnable source), REQ-ROB-011 (standard library only) and the CONTRIBUTING rules (no code comments, GPL-3.0-only). No performance or timing requirement is stated: no timing is measured or bounded by a test. Resource bounds are the bridge limits in [ICD §6](../icd/icd-cstack.md#6-security-and-input-bounds); only the depth limit is tested (REQ-ROB-012), the rest are gaps in §8.
+Reusability (SWE-147), portability and design constraints are covered by REQ-ROB-007 (pinnable source), REQ-ROB-011 (standard library only) and the CONTRIBUTING rules (no code comments, GPL-3.0-only). No performance or timing requirement is stated: no timing is measured or bounded by a test. Resource bounds are the bridge limits in [ICD §6](../icd/icd-cstack.md#6-security-and-input-bounds); every one is tested (REQ-ROB-012, REQ-ROB-026 and REQ-ROB-030).
 
 ## 6. Not applicable categories
 
@@ -293,24 +393,24 @@ Tests are run with the CI commands in the [test plan](../verification/test-plan.
 
 ## 8. Untested behaviour (gaps)
 
-The code does the following, but no test checks it, so it is not stated as a requirement. Each is a candidate requirement once a test exists. TBD count: 0.
+Every behaviour listed here when this section was written now has a test and a requirement. No gap is open. TBD count: 0. The rows are kept so the IDs stay resolvable; IDs are never reused.
 
-| ID | Behaviour in code | Where |
-|---|---|---|
-| GAP-ROB-01 | Input frames over 65536 bytes are rejected with `-32002` | `foundation_robotics_bridge/server.py` `decode_frame` |
-| GAP-ROB-02 | More than 16384 JSON nodes are rejected with `-32002` | `decode_frame` |
-| GAP-ROB-03 | Strings over 1024 characters are rejected with `-32002` | `decode_frame` |
-| GAP-ROB-04 | Integers over 15 digits are rejected with `-32002` | `_integer` |
-| GAP-ROB-05 | An oversized or unterminated line gets one `-32002` reply, then the session ends with exit status 2 | `serve` |
-| GAP-ROB-06 | A response over 1048576 bytes is replaced by a `-32002` "Result withheld" error | `encode_response` |
-| GAP-ROB-07 | `ping` returns `{}` and works before `initialize` | `Bridge.dispatch` |
-| GAP-ROB-08 | A second `initialize` returns `-32000`; a wrong `protocolVersion` returns `-32001` | `Bridge.dispatch` |
-| GAP-ROB-09 | A message without `id` (notification) gets no reply and is not executed | `Bridge.dispatch` |
-| GAP-ROB-10 | Batches, extra envelope fields, wrong `jsonrpc`, empty method and `null` or over-long ids return `-32600`; unknown methods `-32601`; non-object `arguments` `-32602` | `Bridge.dispatch` |
-| GAP-ROB-11 | An unexpected exception inside a tool returns `-32603` with no result | `Bridge.dispatch` |
-| GAP-ROB-12 | Error receipts carry `input_sha256` (only success receipts are asserted) | `foundation_robotics/tools.py` `run` |
-| GAP-ROB-13 | Caller-supplied thresholds replace defaults, are labelled `caller` in `threshold_sources` and add a `CHECK` Evidence entry | `measures.thresholds`, `tools.threshold_evidence` |
-| GAP-ROB-14 | `gait_check` honours `up_axis`; `scale_timing` and `gait_check` honour `gravity_mm_s2` | `gait.py`, `scale.py` |
+| ID | Behaviour in code | Where | Status |
+|---|---|---|---|
+| GAP-ROB-01 | Input frames over 65536 bytes are rejected with `-32002` | `foundation_robotics_bridge/server.py` `decode_frame` | Closed: REQ-ROB-012, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_01_input_frames_over_65536_bytes_are_rejected_with_32002` |
+| GAP-ROB-02 | More than 16384 JSON nodes are rejected with `-32002` | `decode_frame` | Closed: REQ-ROB-012, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_02_more_than_16384_json_nodes_are_rejected_with_32002` |
+| GAP-ROB-03 | Strings over 1024 characters are rejected with `-32002` | `decode_frame` | Closed: REQ-ROB-012, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_03_strings_over_1024_characters_are_rejected_with_32002` |
+| GAP-ROB-04 | Integers over 15 digits are rejected with `-32002` | `_integer` | Closed: REQ-ROB-012, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_04_integers_over_15_digits_are_rejected_with_32002` |
+| GAP-ROB-05 | An oversized or unterminated line gets one `-32002` reply, then the session ends with exit status 2 | `serve` | Closed: REQ-ROB-025, `tests/test_bridge.py::BridgeTests.test_gap_rob_05_an_oversized_or_unterminated_line_gets_one_reply_then_exit_status_2` |
+| GAP-ROB-06 | A response over 1048576 bytes is replaced by a `-32002` "Result withheld" error | `encode_response` | Closed: REQ-ROB-026, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_06_a_response_over_1048576_bytes_is_withheld_with_32002` |
+| GAP-ROB-07 | `ping` returns `{}` and works before `initialize` | `Bridge.dispatch` | Closed: REQ-ROB-027, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_07_ping_returns_empty_and_works_before_initialize` |
+| GAP-ROB-08 | A second `initialize` returns `-32000`; a wrong `protocolVersion` returns `-32001` | `Bridge.dispatch` | Closed: REQ-ROB-028, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_08_second_initialize_is_32000_and_wrong_protocol_is_32001` |
+| GAP-ROB-09 | A message without `id` (notification) gets no reply and is not executed | `Bridge.dispatch` | Closed: REQ-ROB-029, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_09_a_notification_gets_no_reply_and_is_not_executed` |
+| GAP-ROB-10 | Batches, extra envelope fields, wrong `jsonrpc`, empty method and `null` or over-long ids return `-32600`; unknown methods `-32601`; non-object `arguments` `-32602` | `Bridge.dispatch` | Closed: REQ-ROB-030, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_10_envelope_method_and_argument_errors` |
+| GAP-ROB-11 | An unexpected exception inside a tool returns `-32603` with no result | `Bridge.dispatch` | Closed: REQ-ROB-031, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_11_an_unexpected_tool_exception_returns_32603_with_no_result` |
+| GAP-ROB-12 | Error receipts carry `input_sha256` | `foundation_robotics/tools.py` `run` | Closed: REQ-ROB-010, `tests/test_tools.py::InventoryTests.test_gap_rob_12_error_receipts_carry_the_input_hash`, `tests/test_bridge.py::BridgeGapTests.test_gap_rob_12_bridge_error_receipts_carry_the_input_hash` |
+| GAP-ROB-13 | Caller-supplied thresholds replace defaults, are labelled `caller` in `threshold_sources` and add a `CHECK` Evidence entry | `measures.thresholds`, `tools.threshold_evidence` | Closed: REQ-ROB-032, `tests/test_tools.py::ThresholdOverrideTests` (2 tests) |
+| GAP-ROB-14 | `gait_check` honours `up_axis`; `scale_timing` and `gait_check` honour `gravity_mm_s2` | `gait.py`, `scale.py` | Closed: REQ-ROB-033 (`tests/test_tools.py::GravityAndAxisTests.test_gap_rob_14_gait_check_honours_up_axis`), REQ-ROB-034 (`tests/test_tools.py::GravityAndAxisTests.test_gap_rob_14_scale_timing_honours_gravity`, `tests/test_tools.py::GravityAndAxisTests.test_gap_rob_14_gait_check_honours_gravity`) |
 
 ## Change history
 
@@ -321,3 +421,4 @@ The code does the following, but no test checks it, so it is not stated as a req
 | 1.2 | 2026-11-04 | 8bc1227 | REQ-ROB-007 excludes the root `.github/` tree | PR #10 |
 | 2.0 | 2026-11-08 | b4de079 | Family standard: metadata, record format, derivation and allocation per requirement. Added REQ-ROB-013 to 022 for tested behaviour. Narrowed REQ-ROB-012 to the tested depth limit and wire profile; the untested frame, node, string and integer limits moved to §8. REQ-ROB-008 and 011 gained test evidence (T, I). Untested behaviour listed as GAP-ROB-01 to 14 | docs/nasa-standard PR |
 | 2.1 | 2026-11-09 | d5bbe35 | Added REQ-ROB-023 (field-level tool catalog) and REQ-ROB-024 (test report verdict) | PR fixing the 2026-11-09 backfill-review findings |
+| 2.2 | 2026-11-10 | d664527 | Every GAP-ROB-01 to 14 behaviour now has a test. REQ-ROB-012 widened back to the frame, node, string and integer limits. Added REQ-ROB-025 to 031 (bridge framing, response limit, `ping`, initialize, notifications, envelope errors, internal errors) and REQ-ROB-032 to 034 (caller thresholds, `gait_check` up-axis, caller gravity in `scale_timing` and `gait_check`). REQ-ROB-022 now runs in CI (F-3). §8 rows marked closed | PR from the family findings sweep |
